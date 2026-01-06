@@ -26,7 +26,10 @@ https://github.com/ros-simulation/gazebo_ros_demos/blob/kinetic-devel/rrbot_desc
     <origin xyz="0 0 0" rpy="0 0 0" />
   </xacro:rrbot>
 
+  <xacro:arg name="use_fake_hardware" default="true" />
+  <xacro:arg name="fake_sensor_commands" default="false" />
+
   <xacro:rrbot_ros2_control
-    name="RRBot" prefix="$(arg prefix)" />
+    name="RRBot" prefix="$(arg prefix)" use_fake_hardware="$(arg use_fake_hardware)" fake_sensor_commands="$(arg fake_sensor_commands)" />
 
 </robot>

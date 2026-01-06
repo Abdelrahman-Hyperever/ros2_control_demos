@@ -16,10 +16,11 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+import os
 
 
 def generate_launch_description():
@@ -76,13 +77,13 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "controllers_file",
             default_value="admittance_demo_controllers.yaml",
-            description="YAML file with the controllers configuration.",
+            description="YAML file with the controllers configuration. Defaults to rrbot-specific config when using rrbot_description.",
         )
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             "description_package",
-            default_value="ur_description",
+            default_value="rrbot_description",
             description="Description package with robot URDF/XACRO files. Usually the argument \
         is not set, it enables use of a custom description.",
         )
@@ -90,7 +91,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "description_file",
-            default_value="ur.urdf.xacro",
+            default_value="rrbot.urdf.xacro",
             description="URDF/XACRO description file with the robot.",
         )
     )
@@ -191,16 +192,57 @@ def generate_launch_description():
     visual_params = PathJoinSubstitution(
         [FindPackageShare(description_package), "config", ur_type, "visual_parameters.yaml"]
     )
-    script_filename = PathJoinSubstitution(
-        [FindPackageShare("ur_robot_driver"), "resources", "ros_control.urscript"]
+    # Use direct path for ur_client_library script since package may not be in ament index
+    # Find workspace root by going up from launch file until we find a directory with 'src' subdirectory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    workspace_path = current_dir
+    while workspace_path != os.path.dirname(workspace_path):  # Stop at filesystem root
+        if os.path.exists(os.path.join(workspace_path, 'src')) and os.path.exists(os.path.join(workspace_path, 'install')):
+            break
+        workspace_path = os.path.dirname(workspace_path)
+    script_filename = os.path.join(
+        workspace_path,
+        'install',
+        'ur_client_library',
+        'share',
+        'ur_client_library',
+        'resources',
+        'external_control.urscript'
     )
-    input_recipe_filename = PathJoinSubstitution(
-        [FindPackageShare("ur_robot_driver"), "resources", "rtde_input_recipe.txt"]
+    # Use source directory paths for recipe files since ur_robot_driver may not be installed
+    # This is a workaround until ur_robot_driver package is built and installed
+    # Find workspace root by going up from launch file until we find a directory with 'src' subdirectory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    workspace_path = current_dir
+    while workspace_path != os.path.dirname(workspace_path):  # Stop at filesystem root
+        if os.path.exists(os.path.join(workspace_path, 'src')) and os.path.exists(os.path.join(workspace_path, 'install')):
+            break
+        workspace_path = os.path.dirname(workspace_path)
+    input_recipe_filename = os.path.join(
+        workspace_path,
+        'src',
+        'external',
+        'deps',
+        'control_demo',
+        'Universal_Robots_ROS2_Driver',
+        'ur_robot_driver',
+        'resources',
+        'rtde_input_recipe.txt'
     )
-    output_recipe_filename = PathJoinSubstitution(
-        [FindPackageShare("ur_robot_driver"), "resources", "rtde_output_recipe.txt"]
+    output_recipe_filename = os.path.join(
+        workspace_path,
+        'src',
+        'external',
+        'deps',
+        'control_demo',
+        'Universal_Robots_ROS2_Driver',
+        'ur_robot_driver',
+        'resources',
+        'rtde_output_recipe.txt'
     )
 
+    # Create robot description command - simplified for rrbot, full for UR
+    # For rrbot, pass prefix and fake hardware parameters; for UR, pass all parameters
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
@@ -208,42 +250,6 @@ def generate_launch_description():
             PathJoinSubstitution(
                 [FindPackageShare(description_package), "urdf", description_file]
             ),
-            " ",
-            "robot_ip:=",
-            robot_ip,
-            " ",
-            "joint_limit_params:=",
-            joint_limit_params,
-            " ",
-            "kinematics_params:=",
-            kinematics_params,
-            " ",
-            "physical_params:=",
-            physical_params,
-            " ",
-            "visual_params:=",
-            visual_params,
-            " ",
-            "safety_limits:=",
-            safety_limits,
-            " ",
-            "safety_pos_margin:=",
-            safety_pos_margin,
-            " ",
-            "safety_k_position:=",
-            safety_k_position,
-            " ",
-            "name:=",
-            ur_type,
-            " ",
-            "script_filename:=",
-            script_filename,
-            " ",
-            "input_recipe_filename:=",
-            input_recipe_filename,
-            " ",
-            "output_recipe_filename:=",
-            output_recipe_filename,
             " ",
             "prefix:=",
             prefix,
@@ -253,18 +259,6 @@ def generate_launch_description():
             " ",
             "fake_sensor_commands:=",
             fake_sensor_commands,
-            " ",
-            "headless_mode:=",
-            headless_mode,
-            " ",
-            "initial_positions_file:=",
-            PathJoinSubstitution(
-                [
-                    FindPackageShare("rrbot_description"),
-                    "admittance_demo",
-                    "initial_positions.yaml",
-                ]
-            ),
             " ",
         ]
     )
@@ -291,8 +285,17 @@ def generate_launch_description():
 
     robot_description_semantic = {"robot_description_semantic": robot_description_semantic_content}
 
+    # Use rrbot-specific config when using rrbot_description
+    controllers_file_final = PythonExpression([
+        "'admittance_demo_controllers_rrbot.yaml' if '",
+        description_package,
+        "' == 'rrbot_description' else '",
+        controllers_file,
+        "'"
+    ])
+    
     initial_joint_controllers = PathJoinSubstitution(
-        [FindPackageShare(runtime_config_package), "config", controllers_file]
+        [FindPackageShare(runtime_config_package), "config", controllers_file_final]
     )
 
     rviz_config_file = PathJoinSubstitution(
@@ -350,15 +353,18 @@ def generate_launch_description():
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
     )
 
+    # UR-specific controllers - only spawn when using UR robot (not rrbot)
     io_and_status_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
+        condition=UnlessCondition(PythonExpression(["'", description_package, "' == 'rrbot_description'"])),
         arguments=["io_and_status_controller", "-c", "/controller_manager"],
     )
 
     speed_scaling_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
+        condition=UnlessCondition(PythonExpression(["'", description_package, "' == 'rrbot_description'"])),
         arguments=[
             "speed_scaling_state_broadcaster",
             "--controller-manager",
@@ -379,7 +385,7 @@ def generate_launch_description():
     admittance_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["admittance_controller", "-c", "/controller_manager", "--stopped"],
+        arguments=["admittance_controller", "-c", "/controller_manager", "--inactive"],
     )
 
     faked_forces_controller_spawner = Node(

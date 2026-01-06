@@ -1,0 +1,115 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 600  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    force_torque_sensor_broadcaster:
+      type: force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster
+
+    admittance_controller:
+      type: admittance_controller/AdmittanceController
+
+    faked_forces_controller:
+      type: forward_command_controller/MultiInterfaceForwardCommandController
+
+
+force_torque_sensor_broadcaster:
+  ros__parameters:
+    sensor_name: tcp_fts_sensor
+    frame_id: tool_link
+    additional_frames_to_publish: [base_link]
+
+
+admittance_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    enable_parameter_update_without_reactivation: false
+
+    ft_sensor_name: tcp_fts_sensor
+    use_joint_commands_as_input: true
+
+    state_publish_rate: 200.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      goal_time: 0.0
+
+    IK:
+      base: base_link
+      tip: tool_link
+      group_name: rrbot_manipulator
+
+    endeffector_frame: tool_link
+    control_frame: base_link
+    fixed_world_frame: base_link
+    sensor_frame: tool_link
+
+    admittance:
+      selected_axes:
+        x: true
+        y: true
+        z: true
+        rx: true
+        ry: true
+        rz: true
+
+      mass:
+        x: 10.0
+        y: 10.0
+        z: 10.0
+        rx: 10.0
+        ry: 10.0
+        rz: 10.0
+
+      damping_ratio:
+        x: 2.828427
+        y: 2.828427
+        z: 2.828427
+        rx: 2.23607
+        ry: 2.23607
+        rz: 2.23607
+
+      stiffness:
+        x: 50.0
+        y: 50.0
+        z: 50.0
+        rx: 50.0
+        ry: 50.0
+        rz: 50.0
+
+    input_wrench_filter_chain:
+      filter1:
+        type: control_filters/LowPassFilterWrench
+        name: low_pass_filter
+        params:
+          sampling_frequency: 200.0
+          damping_frequency: 50.0
+          damping_intensity: 1.0
+          divider: 1
+
+
+faked_forces_controller:
+  ros__parameters:
+    joint: tcp_fts_sensor
+    interface_names:
+      - force.x
+      - force.y
+      - force.z
+      - torque.x
+      - torque.y
+      - torque.z
