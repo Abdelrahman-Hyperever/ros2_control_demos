@@ -22,8 +22,8 @@
 #include <sstream>
 #include <vector>
 
-#include "hardware_interface/lexical_casts.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include <string>
 #include "rclcpp/clock.hpp"
 #include "rclcpp/logging.hpp"
 #include "transmission_interface/simple_transmission_loader.hpp"

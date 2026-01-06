@@ -83,7 +83,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "description_package",
-            default_value="rrbot_description",
+            default_value="ros2_control_demo_example_1",
             description="Description package with robot URDF/XACRO files. Usually the argument \
         is not set, it enables use of a custom description.",
         )
@@ -285,11 +285,11 @@ def generate_launch_description():
 
     robot_description_semantic = {"robot_description_semantic": robot_description_semantic_content}
 
-    # Use rrbot-specific config when using rrbot_description
+    # Use rrbot-specific config when using ros2_control_demo_example_1
     controllers_file_final = PythonExpression([
         "'admittance_demo_controllers_rrbot.yaml' if '",
         description_package,
-        "' == 'rrbot_description' else '",
+        "' == 'ros2_control_demo_example_1' else '",
         controllers_file,
         "'"
     ])
@@ -299,11 +299,11 @@ def generate_launch_description():
     )
 
     rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare("rrbot_description"), "admittance_demo", "admittance_demo.rviz"]
+        [FindPackageShare("ros2_control_demo_description"), "rrbot_description", "admittance_demo", "admittance_demo.rviz"]
     )
 
     joint_limits_admittance = PathJoinSubstitution(
-        [FindPackageShare("rrbot_description"), "admittance_demo", "joint_limits_admittance.yaml"]
+        [FindPackageShare("ros2_control_demo_description"), "rrbot_description", "admittance_demo", "joint_limits_admittance.yaml"]
     )
 
     control_node = Node(
@@ -357,14 +357,14 @@ def generate_launch_description():
     io_and_status_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        condition=UnlessCondition(PythonExpression(["'", description_package, "' == 'rrbot_description'"])),
+        condition=UnlessCondition(PythonExpression(["'", description_package, "' == 'ros2_control_demo_example_1'"])),
         arguments=["io_and_status_controller", "-c", "/controller_manager"],
     )
 
     speed_scaling_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        condition=UnlessCondition(PythonExpression(["'", description_package, "' == 'rrbot_description'"])),
+        condition=UnlessCondition(PythonExpression(["'", description_package, "' == 'ros2_control_demo_example_1'"])),
         arguments=[
             "speed_scaling_state_broadcaster",
             "--controller-manager",

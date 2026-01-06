@@ -28,9 +28,9 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <string>
 
 #include "hardware_interface/actuator_interface.hpp"
-#include "hardware_interface/lexical_casts.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -47,9 +47,9 @@ hardware_interface::CallbackReturn RRBotActuatorWithoutFeedback::on_init(
   }
   // START: This part here is for exemplary purposes - Please do not copy to your production code
   hw_start_sec_ =
-    hardware_interface::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
+    std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
   hw_stop_sec_ =
-    hardware_interface::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
+    std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
   socket_port_ =
     static_cast<uint16_t>(std::stoi(info_.hardware_parameters["example_param_socket_port"]));
   // END: This part here is for exemplary purposes - Please do not copy to your production code

@@ -23,9 +23,9 @@
 #include <sstream>
 #include <vector>
 
-#include "hardware_interface/lexical_casts.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include <string>
 
 namespace ros2_control_demo_example_2
 {
@@ -41,9 +41,9 @@ hardware_interface::CallbackReturn DiffBotSystemHardware::on_init(
 
   // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
   hw_start_sec_ =
-    hardware_interface::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
+    std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
   hw_stop_sec_ =
-    hardware_interface::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
+    std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
   // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
